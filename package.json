@@ -1,0 +1,25 @@
+{
+  "name": "inventra",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,green \"npm run dev -w @inventra/web\" \"npm run dev -w @inventra/api\"",
+    "dev:web": "npm run dev -w @inventra/web",
+    "dev:api": "npm run dev -w @inventra/api",
+    "build": "npm run build -w @inventra/web",
+    "lint": "npm run lint -w @inventra/web && npm run lint -w @inventra/api",
+    "test": "npm run test -w @inventra/web && npm run test -w @inventra/api",
+    "db:generate": "npm run db:generate -w @inventra/api",
+    "db:migrate": "npm run db:migrate -w @inventra/api",
+    "db:deploy": "npm run db:deploy -w @inventra/api",
+    "db:seed": "npm run db:seed -w @inventra/api",
+    "build:api": "npm run build -w @inventra/api",
+    "start": "npm run start -w @inventra/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
