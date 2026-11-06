@@ -1,14 +1,14 @@
 import PropTypes from "prop-types";
-import { USD_MXN_RATE } from "../../config/pricing";
+import CategoryIcon, { categoryVisualClass } from "../icons/CategoryIcon";
 import { getCategoryName } from "../../utils/categories";
+import { formatPrice } from "../../utils/pricing";
 
 function ServiceCard({ item, onView, currency }) {
   const category = getCategoryName(item.category);
-  const sourcePrice = Number(item.price);
-  const price = currency === "USD" ? sourcePrice / USD_MXN_RATE : sourcePrice;
-  const formattedPrice = new Intl.NumberFormat(currency === "USD" ? "en-US" : "es-MX", { style: "currency", currency, maximumFractionDigits: currency === "USD" ? 2 : 0 }).format(price);
+  const formattedPrice = formatPrice(item.price, currency);
   return (
     <article className="service-card">
+      <div className={`card-visual ${categoryVisualClass(category)}`} aria-hidden="true"><CategoryIcon name={category} /></div>
       <span className="card-category">{category || "Servicio profesional"}</span>
       <h3>{item.name}</h3>
       <p>{item.description}</p>

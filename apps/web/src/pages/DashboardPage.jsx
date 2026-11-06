@@ -5,6 +5,7 @@ import CatalogContent from "../components/dashboard/CatalogContent";
 import CatalogEditor from "../components/dashboard/CatalogEditor";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import InquiriesPanel from "../components/dashboard/InquiriesPanel";
+import { usePreferences } from "../context/PreferencesContext";
 
 const emptyItem = { name: "", description: "", price: "", categoryId: "" };
 
@@ -24,14 +25,18 @@ export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [confirmation, setConfirmation] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const { currency } = usePreferences();
 
   async function load() {
     setLoading(true); setError("");
     try {
-      const [itemsResponse, categoriesResponse, inquiriesResponse] = await Promise.all([api.get("/api/items"), api.get("/api/categories"), api.get("/api/inquiries")]);
-      setItems(Array.isArray(itemsResponse.data) ? itemsResponse.data : []);
-      setCategories(Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
-      setInquiries(Array.isArray(inquiriesResponse.data) ? inquiriesResponse.data : []);
+      const [itemsResult, categoriesResult, inquiriesResult] = await Promise.allSettled([api.get("/api/items"), api.get("/api/categories"), api.get("/api/inquiries")]);
+      if (itemsResult.status === "fulfilled") setItems(Array.isArray(itemsResult.value.data) ? itemsResult.value.data : []);
+      if (categoriesResult.status === "fulfilled") setCategories(Array.isArray(categoriesResult.value.data) ? categoriesResult.value.data : []);
+      if (inquiriesResult.status === "fulfilled") setInquiries(Array.isArray(inquiriesResult.value.data) ? inquiriesResult.value.data : []);
+      const failed = [itemsResult, categoriesResult, inquiriesResult].filter(result => result.status === "rejected").length;
+      if (failed === 3) setError("No fue posible cargar el panel.");
+      else if (failed > 0) setError("No se pudieron cargar algunas secciones del panel.");
     } catch { setError("No fue posible cargar el panel."); }
     finally { setLoading(false); }
   }
@@ -109,7 +114,7 @@ export default function DashboardPage() {
   function changeTab(nextTab) { setTab(nextTab); cancel(); }
   function editItem(item) { setError(""); setTab("items"); setEditorOpen(true); setEditing({ type: "item", id: item.id }); setItemForm({ name: item.name || "", description: item.description || "", price: item.price ?? "", categoryId: item.categoryId || "" }); }
   function editCategory(category) { setError(""); setTab("categories"); setEditorOpen(true); setEditing({ type: "category", id: category.id }); setCategoryForm(category.name); }
-  function askToRemove(type, value) { setConfirmation({ title: type === "item" ? "Eliminar servicio" : "Eliminar categoría", description: `Se eliminará ${type === "item" ? value.name : `la categoría ${value.name}`}. Esta acción no se puede deshacer.`, confirmLabel: "Eliminar", action: () => remove(type, value) }); }
+  function askToRemove(type, value) { setConfirmation({ title: type === "item" ? "Eliminar servicio" : "Eliminar categoría", description: type === "item" ? `Se eliminará ${value.name} y también las solicitudes asociadas a este servicio. Esta acción no se puede deshacer.` : `Se eliminará la categoría ${value.name}. Esta acción no se puede deshacer.`, confirmLabel: "Eliminar", action: () => remove(type, value) }); }
   function askToRemoveClosed() { const count = inquiries.filter(entry => entry.status === "CLOSED").length; setConfirmation({ title: "Eliminar solicitudes cerradas", description: `${count === 1 ? "Se eliminará" : "Se eliminarán"} ${count} ${count === 1 ? "solicitud cerrada" : "solicitudes cerradas"}. Esta acción no se puede deshacer.`, confirmLabel: "Eliminar cerradas", action: removeClosedInquiries }); }
   async function confirmAction() { const action = confirmation?.action; setConfirmation(null); await action?.(); }
 
@@ -120,7 +125,7 @@ export default function DashboardPage() {
       <div className="catalog-controls"><div className="tabs" role="group" aria-label="Tipo de contenido"><button aria-pressed={tab === "items"} className={tab === "items" ? "active" : ""} onClick={() => changeTab("items")}>Servicios</button><button aria-pressed={tab === "categories"} className={tab === "categories" ? "active" : ""} onClick={() => changeTab("categories")}>Categorías</button></div><button className="button button-primary" onClick={() => { setError(""); setEditorOpen(true); }}>{tab === "items" ? "Nuevo servicio" : "Nueva categoría"}</button></div>
       <div className="dashboard-grid">
         {editorOpen && <CatalogEditor tab={tab} editing={editing} itemForm={itemForm} categoryForm={categoryForm} categories={categories} saving={saving} error={error} onItemChange={setItemForm} onCategoryChange={setCategoryForm} onSaveItem={saveItem} onSaveCategory={saveCategory} onCancel={cancel}/>}
-        <CatalogContent tab={tab} items={items} categories={categories} query={query} loading={loading} error={error} onQueryChange={setQuery} onEditItem={editItem} onEditCategory={editCategory} onRemove={askToRemove}/>
+        <CatalogContent tab={tab} items={items} categories={categories} query={query} loading={loading} error={error} currency={currency} onQueryChange={setQuery} onEditItem={editItem} onEditCategory={editCategory} onRemove={askToRemove}/>
       </div>
       <InquiriesPanel inquiries={inquiries} onStatusChange={updateInquiry} onRemoveClosed={askToRemoveClosed}/>
       <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || "Confirmar acción"} description={confirmation?.description || ""} confirmLabel={confirmation?.confirmLabel || "Confirmar"} onConfirm={confirmAction} onCancel={() => setConfirmation(null)}/>
