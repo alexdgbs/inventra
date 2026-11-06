@@ -28,7 +28,9 @@ export function readOptionalAuth(req, res, next) {
     req.user = verifyToken(token);
     return next();
   } catch {
-    return res.status(401).json({ message: "La sesión no es válida o expiró." });
+    // Una sesión caducada no bloquea el acceso anónimo: se ignora el token
+    // inválido y la petición sigue sin usuario autenticado.
+    return next();
   }
 }
 

@@ -24,7 +24,7 @@ export default function LoginPage() {
     <div className="login-shell">
       <form className="login-form" onSubmit={submit}>
         <header><h1>Iniciar sesión</h1><p>Accede para administrar tus servicios.</p></header>
-        <div className="login-field"><label htmlFor="username">Usuario</label><input id="username" minLength={3} maxLength={50} autoComplete="username" value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} placeholder="Nombre de usuario" required autoFocus/></div>
+        <div className="login-field"><label htmlFor="username">Usuario</label><input id="username" minLength={3} maxLength={50} autoComplete="username" value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} placeholder="Nombre de usuario" required/></div>
         <div className="login-field">
           <label htmlFor="password">Contraseña</label>
           <div className="password-field">

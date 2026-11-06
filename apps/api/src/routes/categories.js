@@ -31,8 +31,10 @@ router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
 
 router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   const id = idSchema.parse(req.params.id);
-  const result = await prisma.category.deleteMany({ where: { id, ownerId: Number(req.user.sub), services: { none: {} } } });
-  if (!result.count) return res.status(409).json({ message: "Elimina o mueve sus servicios antes de borrar la categoría." });
+  const category = await prisma.category.findFirst({ where: { id, ownerId: Number(req.user.sub) }, select: { id: true, _count: { select: { services: true } } } });
+  if (!category) return res.status(404).json({ message: "Categoría no encontrada." });
+  if (category._count.services > 0) return res.status(409).json({ message: "Elimina o mueve sus servicios antes de borrar la categoría." });
+  await prisma.category.delete({ where: { id } });
   return res.status(204).end();
 });
 
