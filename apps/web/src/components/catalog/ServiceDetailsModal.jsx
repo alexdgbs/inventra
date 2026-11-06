@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 import api from "../../api/client";
-import useModalScrollLock from "../../hooks/useModalScrollLock";
+import Modal from "../Modal";
 import { getCategoryName } from "../../utils/categories";
 
 function InquiryForm({ serviceId, onSent }) {
@@ -18,24 +18,9 @@ function InquiryForm({ serviceId, onSent }) {
 }
 
 export default function ServiceDetailsModal({ service, isAdmin, onClose }) {
-  const modalRef = useRef(null);
   const [sent, setSent] = useState(false);
-  useModalScrollLock(true);
-  useEffect(() => {
-    const previousFocus = document.activeElement;
-    modalRef.current?.querySelector("button")?.focus();
-    function handleKeys(event) {
-      if (event.key === "Escape") return onClose();
-      if (event.key !== "Tab") return;
-      const controls = [...modalRef.current.querySelectorAll("button,input,textarea,select,a[href]")].filter(element => !element.disabled);
-      if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1)?.focus(); }
-      else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0]?.focus(); }
-    }
-    window.addEventListener("keydown", handleKeys);
-    return () => { window.removeEventListener("keydown", handleKeys); previousFocus?.focus?.(); };
-  }, [onClose]);
   const category = getCategoryName(service.category);
-  return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}><section ref={modalRef} className="service-modal" role="dialog" aria-modal="true" aria-labelledby="service-title"><button className="modal-close" onClick={onClose} aria-label="Cerrar detalles">×</button><span className="service-category">{category || "Servicio profesional"}</span><h2 id="service-title">{service.name}</h2><p>{service.description}</p><dl><div><dt>Tarifa</dt><dd>{service.formattedPrice}</dd></div><div><dt>Modalidad</dt><dd>Por hora</dd></div><div><dt>Moneda</dt><dd>{service.currency}</dd></div></dl>{isAdmin ? <div className="admin-inquiry-notice" role="note"><strong>Vista administrativa</strong><p>Las solicitudes de servicio se reservan para clientes externos.</p></div> : sent ? <div className="inquiry-success" role="status"><strong>Solicitud recibida</strong><p>Tu mensaje quedó registrado correctamente.</p><button className="button button-primary button-full" onClick={onClose}>Cerrar</button></div> : <InquiryForm serviceId={service.id} onSent={() => setSent(true)}/>}</section></div>;
+  return <Modal open className="service-modal" role="dialog" labelledBy="service-title" onClose={onClose}><button className="modal-close" onClick={onClose} aria-label="Cerrar detalles">×</button><span className="service-category">{category || "Servicio profesional"}</span><h2 id="service-title">{service.name}</h2><p>{service.description}</p><dl><div><dt>Tarifa</dt><dd>{service.formattedPrice}</dd></div><div><dt>Modalidad</dt><dd>Por hora</dd></div><div><dt>Moneda</dt><dd>{service.currency}</dd></div></dl>{isAdmin ? <div className="admin-inquiry-notice" role="note"><strong>Vista administrativa</strong><p>Las solicitudes de servicio se reservan para clientes externos.</p></div> : sent ? <div className="inquiry-success" role="status"><strong>Solicitud recibida</strong><p>Tu mensaje quedó registrado correctamente.</p><button className="button button-primary button-full" onClick={onClose}>Cerrar</button></div> : <InquiryForm serviceId={service.id} onSent={() => setSent(true)}/>}</Modal>;
 }
 
 InquiryForm.propTypes = { serviceId: PropTypes.number.isRequired, onSent: PropTypes.func.isRequired };
