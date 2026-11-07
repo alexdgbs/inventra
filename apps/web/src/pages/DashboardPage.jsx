@@ -6,6 +6,7 @@ import CatalogEditor from "../components/dashboard/CatalogEditor";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import InquiriesPanel from "../components/dashboard/InquiriesPanel";
 import { usePreferences } from "../context/PreferencesContext";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const emptyItem = { name: "", description: "", price: "", categoryId: "" };
 
@@ -61,7 +62,7 @@ export default function DashboardPage() {
         setItems([...items, data]); notify("Servicio creado");
       }
       setItemForm(emptyItem); setEditing(null); setEditorOpen(false);
-    } catch { setError("No se pudo guardar el servicio."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo guardar el servicio.")); }
     finally { setSaving(false); }
   }
 
@@ -78,7 +79,7 @@ export default function DashboardPage() {
         setCategories([...categories, data]); notify("Categoría creada");
       }
       setCategoryForm(""); setEditing(null); setEditorOpen(false);
-    } catch { setError("No se pudo guardar la categoría."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo guardar la categoría.")); }
     finally { setSaving(false); }
   }
 
@@ -88,7 +89,7 @@ export default function DashboardPage() {
       if (type === "item") setItems(items.filter(item => item.id !== value.id));
       else setCategories(categories.filter(category => category.id !== value.id));
       notify("Elemento eliminado");
-    } catch (requestError) { setError(requestError.response?.data?.message || "No se pudo eliminar el elemento."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo eliminar el elemento.")); }
   }
 
   async function updateInquiry(id, status) {
@@ -97,7 +98,7 @@ export default function DashboardPage() {
       const { data } = await api.patch(`/api/inquiries/${id}/status`, { status });
       setInquiries(inquiries.map(entry => entry.id === id ? data : entry));
       notify("Estado actualizado");
-    } catch { setError("No se pudo actualizar la solicitud."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo actualizar la solicitud.")); }
   }
 
   async function removeClosedInquiries() {
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       const { data } = await api.delete("/api/inquiries/closed");
       setInquiries(inquiries.filter(entry => entry.status !== "CLOSED"));
       notify(`${data.deleted} ${data.deleted === 1 ? "solicitud eliminada" : "solicitudes eliminadas"}`);
-    } catch { setError("No se pudieron eliminar las solicitudes cerradas."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudieron eliminar las solicitudes cerradas.")); }
   }
 
   function cancel() { setEditing(null); setEditorOpen(false); setItemForm(emptyItem); setCategoryForm(""); }

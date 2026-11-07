@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getApiErrorMessage } from "../utils/apiError";
+import { FORM_LIMITS } from "../utils/formLimits";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -16,7 +18,7 @@ export default function LoginPage() {
     try {
       const user = await login(form);
       navigate(location.state?.from?.pathname || (user.role === "admin" ? "/dashboard" : "/"), { replace: true });
-    } catch (requestError) { setError(requestError.response?.data?.message || "No pudimos iniciar sesión. Verifica tus credenciales."); }
+    } catch (requestError) { setError(getApiErrorMessage(requestError, "No pudimos iniciar sesión. Verifica tus credenciales.")); }
     finally { setLoading(false); }
   }
 
@@ -24,11 +26,11 @@ export default function LoginPage() {
     <div className="login-shell">
       <form className="login-form" onSubmit={submit}>
         <header><h1>Iniciar sesión</h1><p>Accede para administrar tus servicios.</p></header>
-        <div className="login-field"><label htmlFor="username">Usuario</label><input id="username" minLength={3} maxLength={50} autoComplete="username" value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} placeholder="Nombre de usuario" required/></div>
+        <div className="login-field"><label htmlFor="username">Usuario</label><input id="username" minLength={FORM_LIMITS.login.username.min} maxLength={FORM_LIMITS.login.username.max} autoComplete="username" value={form.username} onChange={event => setForm({ ...form, username: event.target.value })} placeholder="Nombre de usuario" required/></div>
         <div className="login-field">
           <label htmlFor="password">Contraseña</label>
           <div className="password-field">
-            <input id="password" minLength={6} maxLength={100} autoComplete="current-password" type={showPassword ? "text" : "password"} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} placeholder="Tu contraseña" required/>
+            <input id="password" minLength={FORM_LIMITS.login.password.min} maxLength={FORM_LIMITS.login.password.max} autoComplete="current-password" type={showPassword ? "text" : "password"} value={form.password} onChange={event => setForm({ ...form, password: event.target.value })} placeholder="Tu contraseña" required/>
             <button type="button" className="password-toggle" aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-controls="password" onClick={() => setShowPassword(value => !value)}>{showPassword ? "Ocultar" : "Mostrar"}</button>
           </div>
         </div>

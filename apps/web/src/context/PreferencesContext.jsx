@@ -1,14 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
+import { applyThemeToDocument, isValidTheme, resolveTheme, THEME_STORAGE_KEY } from "../utils/theme";
 
 const PreferencesContext = createContext(null);
 
 function initialTheme() {
   const applied = document.documentElement.dataset.theme;
-  if (applied === "light" || applied === "dark") return applied;
-  const saved = localStorage.getItem("inventra-theme");
-  if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (isValidTheme(applied)) return applied;
+  return resolveTheme(localStorage.getItem(THEME_STORAGE_KEY));
 }
 
 export function PreferencesProvider({ children }) {
@@ -16,11 +15,8 @@ export function PreferencesProvider({ children }) {
   const [currency, setCurrency] = useState(() => localStorage.getItem("inventra-currency") === "USD" ? "USD" : "MXN");
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    document.documentElement.style.backgroundColor = theme === "dark" ? "#111113" : "#ffffff";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#111113" : "#ffffff");
-    localStorage.setItem("inventra-theme", theme);
+    applyThemeToDocument(theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   useEffect(() => { localStorage.setItem("inventra-currency", currency); }, [currency]);

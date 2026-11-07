@@ -1,17 +1,6 @@
 import PropTypes from "prop-types";
 import { normalizeSearch } from "../../utils/search";
 
-const VISUAL_CLASSES = {
-  "diseno": "card-visual--diseno",
-  "desarrollo": "card-visual--desarrollo",
-  "marketing": "card-visual--marketing",
-  "consultoria": "card-visual--consultoria",
-};
-
-export function categoryVisualClass(name) {
-  return VISUAL_CLASSES[normalizeSearch(name)] || "card-visual--default";
-}
-
 function DesignIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>;
 }

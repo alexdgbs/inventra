@@ -3,7 +3,7 @@ import ExpandableSearch from "../ExpandableSearch";
 import PropTypes from "prop-types";
 import { getCategoryName } from "../../utils/categories";
 import { formatPrice } from "../../utils/pricing";
-import { matchesService, normalizeSearch } from "../../utils/search";
+import { matchesService, matchesText } from "../../utils/search";
 
 function ActionIcon({ type }) {
   return <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{type === "edit" ? <><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></> : <><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/></>}</svg>;
@@ -15,7 +15,7 @@ function Empty({ text }) {
 
 export default function CatalogContent({ tab, items, categories, query, loading, error, currency, onQueryChange, onEditItem, onEditCategory, onRemove }) {
   const visibleItems = items.filter(item => matchesService(item, query));
-  const visibleCategories = categories.filter(category => normalizeSearch(category.name).includes(normalizeSearch(query)));
+  const visibleCategories = categories.filter(category => matchesText(category.name, query));
   const resultCount = tab === "items" ? visibleItems.length : visibleCategories.length;
   const typeLabel = tab === "items" ? "servicios" : "categorías";
   return <div className="content-panel">

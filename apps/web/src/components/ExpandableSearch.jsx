@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import SearchIcon from "./icons/SearchIcon";
+import useMediaQuery from "../hooks/useMediaQuery";
 import useModalScrollLock from "../hooks/useModalScrollLock";
 
 export default function ExpandableSearch({ query, onQueryChange, label = "Buscar servicios" }) {
   const [expanded, setExpanded] = useState(Boolean(query));
   const [editing, setEditing] = useState(false);
-  useModalScrollLock(editing && window.matchMedia("(max-width: 640px)").matches);
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  useModalScrollLock(editing && isMobile);
   const inputRef = useRef(null);
   const triggerRef = useRef(null);
   const inputId = useId();

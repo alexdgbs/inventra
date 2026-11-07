@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
+import { getApiErrorMessage } from "../utils/apiError";
 import CatalogState from "../components/catalog/CatalogState";
 import CatalogToolbar from "../components/catalog/CatalogToolbar";
 import ServiceDetailsModal from "../components/catalog/ServiceDetailsModal";
@@ -23,7 +24,7 @@ export default function HomePage() {
   async function loadItems() {
     setLoading(true); setError("");
     try { const { data } = await api.get("/api/items"); setItems(Array.isArray(data) ? data : []); }
-    catch { setError("No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo."); }
+    catch (requestError) { setError(getApiErrorMessage(requestError, "No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo.")); }
     finally { setLoading(false); }
   }
 

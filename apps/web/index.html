@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Encuentra especialistas independientes, compara servicios y conecta con el perfil adecuado para tu proyecto." />
     <meta name="theme-color" content="#ffffff" />
+    <!-- Espejo mínimo de src/utils/theme.js: corre antes del bundle para
+         evitar el parpadeo de tema y no puede importar ese módulo. Si
+         cambian la clave "inventra-theme" o los colores, actualiza ambos. -->
     <script>
       (() => {
         const savedTheme = localStorage.getItem("inventra-theme");
