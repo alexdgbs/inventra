@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import CategoryIcon from "../icons/CategoryIcon";
 import { categoryLabel, getCategoryName } from "../../utils/categories";
-import { categoryVisualClass } from "../../utils/categoryVisual";
 import { formatPrice } from "../../utils/pricing";
 
 function ServiceCard({ item, onView, currency }) {
@@ -9,7 +8,7 @@ function ServiceCard({ item, onView, currency }) {
   const formattedPrice = formatPrice(item.price, currency);
   return (
     <article className="service-card">
-      <div className={`card-visual ${categoryVisualClass(category)}`} aria-hidden="true"><CategoryIcon name={category} /></div>
+      <div className="card-visual" aria-hidden="true"><CategoryIcon name={category} /></div>
       <span className="card-category">{categoryLabel(category)}</span>
       <h3>{item.name}</h3>
       <p>{item.description}</p>
