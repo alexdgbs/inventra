@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { idSchema } from "../lib/idSchema.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 const categorySchema = z.object({ name: z.string().trim().min(2).max(80) });
-const idSchema = z.coerce.number().int().positive();
 
 router.get("/", async (req, res) => {
   const categories = await prisma.category.findMany({

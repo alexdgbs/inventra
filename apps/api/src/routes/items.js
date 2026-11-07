@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { idSchema } from "../lib/idSchema.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 
 const router = Router();
-const idSchema = z.coerce.number().int().positive();
 const serviceSchema = z.object({
   name: z.string().trim().min(2).max(120),
   description: z.string().trim().min(10).max(1000),
