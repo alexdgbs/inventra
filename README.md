@@ -82,6 +82,31 @@ actualiza cada servicio por nombre, pero **no borra los servicios antiguos
 de la base de datos**: si un servicio deja de estar en el seed, sigue en
 la base desplegada hasta borrarlo a mano desde el panel.
 
+### Actualizar el catálogo en producción (seed)
+
+El seed de la base local no toca la base de Render. Para que los servicios
+nuevos del seed aparezcan en la página en vivo hay que lanzar el workflow
+**Seed catálogo** a mano. Primero, una sola vez, hay que guardar estos
+secretos en el repo (**Settings → Secrets and variables → Actions →
+New repository secret**):
+
+| Secreto | Valor |
+| --- | --- |
+| `DATABASE_URL` | La cadena de conexión de PostgreSQL, copiada desde el panel de Render (el servicio de base de datos de la API). |
+| `ADMIN_USERNAME` | El mismo usuario administrador que usa la API en Render. |
+| `ADMIN_PASSWORD` | La misma contraseña de administrador que usa la API en Render. |
+
+Después, cada vez que cambie el seed:
+
+1. Entra a **Actions → Seed catálogo → Run workflow** y elige la rama
+   `main`.
+2. Espera a que termine (1-2 minutos) y revisa
+   `https://inventra-seven-xi.vercel.app/api/items`: ahí deben aparecer
+   los 14 servicios.
+
+Nunca escribas estos valores en el código ni en un commit: solo viven
+como secretos de GitHub Actions.
+
 ## Conversión de moneda
 
 El catálogo muestra los precios en MXN o USD. La conversión a USD usa la
