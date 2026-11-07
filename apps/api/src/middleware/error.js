@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 
 export function notFound(req, res) {
-  res.status(404).json({ message: `Ruta no encontrada: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ message: "Ruta no encontrada" });
 }
 
 export function errorHandler(error, req, res, next) {
