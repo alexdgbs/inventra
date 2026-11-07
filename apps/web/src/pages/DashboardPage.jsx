@@ -113,11 +113,55 @@ export default function DashboardPage() {
 
   function cancel() { setEditing(null); setEditorOpen(false); setItemForm(emptyItem); setCategoryForm(""); }
   function changeTab(nextTab) { setTab(nextTab); cancel(); }
-  function editItem(item) { setError(""); setTab("items"); setEditorOpen(true); setEditing({ type: "item", id: item.id }); setItemForm({ name: item.name || "", description: item.description || "", price: item.price ?? "", categoryId: item.categoryId || "" }); }
-  function editCategory(category) { setError(""); setTab("categories"); setEditorOpen(true); setEditing({ type: "category", id: category.id }); setCategoryForm(category.name); }
-  function askToRemove(type, value) { setConfirmation({ title: type === "item" ? "Eliminar servicio" : "Eliminar categoría", description: type === "item" ? `Se eliminará ${value.name} y también las solicitudes asociadas a este servicio. Esta acción no se puede deshacer.` : `Se eliminará la categoría ${value.name}. Esta acción no se puede deshacer.`, confirmLabel: "Eliminar", action: () => remove(type, value) }); }
-  function askToRemoveClosed() { const count = inquiries.filter(entry => entry.status === "CLOSED").length; setConfirmation({ title: "Eliminar solicitudes cerradas", description: `${count === 1 ? "Se eliminará" : "Se eliminarán"} ${count} ${count === 1 ? "solicitud cerrada" : "solicitudes cerradas"}. Esta acción no se puede deshacer.`, confirmLabel: "Eliminar cerradas", action: removeClosedInquiries }); }
-  async function confirmAction() { const action = confirmation?.action; setConfirmation(null); await action?.(); }
+  function editItem(item) {
+    setError("");
+    setTab("items");
+    setEditorOpen(true);
+    setEditing({ type: "item", id: item.id });
+    setItemForm({
+      name: item.name || "",
+      description: item.description || "",
+      price: item.price ?? "",
+      categoryId: item.categoryId || "",
+    });
+  }
+
+  function editCategory(category) {
+    setError("");
+    setTab("categories");
+    setEditorOpen(true);
+    setEditing({ type: "category", id: category.id });
+    setCategoryForm(category.name);
+  }
+
+  function askToRemove(type, value) {
+    const isItem = type === "item";
+    setConfirmation({
+      title: isItem ? "Eliminar servicio" : "Eliminar categoría",
+      description: isItem
+        ? `Se eliminará ${value.name} y también las solicitudes asociadas a este servicio. Esta acción no se puede deshacer.`
+        : `Se eliminará la categoría ${value.name}. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      action: () => remove(type, value),
+    });
+  }
+
+  function askToRemoveClosed() {
+    const count = inquiries.filter(entry => entry.status === "CLOSED").length;
+    const one = count === 1;
+    setConfirmation({
+      title: "Eliminar solicitudes cerradas",
+      description: `${one ? "Se eliminará" : "Se eliminarán"} ${count} ${one ? "solicitud cerrada" : "solicitudes cerradas"}. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar cerradas",
+      action: removeClosedInquiries,
+    });
+  }
+
+  async function confirmAction() {
+    const action = confirmation?.action;
+    setConfirmation(null);
+    await action?.();
+  }
 
   return <section className="dashboard-page">
     <div className={`toast${message ? " is-visible" : ""}`} role="status" aria-atomic="true">{message}</div>
