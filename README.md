@@ -26,11 +26,28 @@ npm ci
 docker compose up -d
 ```
 
-Configura las variables de entorno (ver `.env.example` en cada app):
+Crea a mano los archivos de variables de entorno (no hay archivo de
+ejemplo en el repo):
 
-- `apps/api/.env`: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`,
-  `ADMIN_USERNAME` y `ADMIN_PASSWORD`.
-- `apps/web/.env`: `VITE_API_URL` y `VITE_USD_MXN_RATE`.
+`apps/api/.env`:
+
+| Variable | Para qué |
+| --- | --- |
+| `DATABASE_URL` | Conexión a PostgreSQL (local: la de `docker compose up -d`). |
+| `JWT_SECRET` | Secreto para firmar las sesiones (mínimo 32 caracteres, genera uno propio). |
+| `CORS_ORIGIN` | Orígenes permitidos para el front, separados por comas (`http://localhost:5173`). |
+| `PORT` | Puerto de la API (opcional, por defecto `4000`). |
+| `ADMIN_USERNAME` | Usuario administrador inicial que crea el seed. |
+| `ADMIN_PASSWORD` | Contraseña de ese administrador (el seed la exige para crearlo). |
+
+`apps/web/.env`:
+
+| Variable | Para qué |
+| --- | --- |
+| `VITE_API_URL` | URL base de la API en desarrollo (`http://localhost:4000`; en producción la web usa el proxy `/api` de Vercel). |
+| `VITE_USD_MXN_RATE` | Tasa estimada de conversión MXN por USD (por defecto `17`). |
+
+Nunca subas el `.env` real: contiene secretos.
 
 Después:
 
@@ -61,7 +78,11 @@ usuario ya existe, no se vuelve a crear).
 ## Despliegue
 
 - **Web:** Vercel (`apps/web`). Su `vercel.json` redirige `/api/*` a la API
-  de Render y el resto a `index.html` (SPA).
+  de Render y el resto a `index.html` (SPA). Ojo: la dirección de la API
+  de Render está escrita a mano en `apps/web/vercel.json`
+  (`https://inventra-hv01.onrender.com`). Vercel no acepta variables de
+  entorno ahí, así que si el servicio de Render se renombra o se recrea
+  hay que actualizar ese archivo a mano y redesplegar.
 - **API:** Render (`apps/api`), con PostgreSQL gestionado.
 
 ### Limitación conocida: cold start de Render
@@ -86,9 +107,41 @@ la base desplegada hasta borrarlo a mano desde el panel.
 
 El seed de la base local no toca la base de Render. Para que los servicios
 nuevos del seed aparezcan en la página en vivo hay que lanzar el workflow
-**Seed catálogo** a mano. Primero, una sola vez, hay que guardar estos
-secretos en el repo (**Settings → Secrets and variables → Actions →
-New repository secret**):
+**Seed catálogo** a mano. Primero, una sola vez:
+
+1. Crea el archivo `.github/workflows/seed.yml` en el repo con este
+   contenido (hay que crearlo a mano: la app de GitHub no puede crear
+   archivos en `.github/workflows`):
+
+```yaml
+name: Seed catálogo
+
+# Solo se lanza a mano: actualiza el catálogo de la base de datos de
+# producción (Render) con el seed del repo (14 servicios de ejemplo).
+# No corre en cada push: el seed escribe en la base real.
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate -w @inventra/api
+      - run: npm run db:seed -w @inventra/api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+```
+
+2. Guarda estos secretos en el repo (**Settings → Secrets and variables →
+   Actions → New repository secret**):
 
 | Secreto | Valor |
 | --- | --- |
@@ -96,11 +149,8 @@ New repository secret**):
 | `ADMIN_USERNAME` | El mismo usuario administrador que usa la API en Render. |
 | `ADMIN_PASSWORD` | La misma contraseña de administrador que usa la API en Render. |
 
-Después, cada vez que cambie el seed:
-
-1. Entra a **Actions → Seed catálogo → Run workflow** y elige la rama
-   `main`.
-2. Espera a que termine (1-2 minutos) y revisa
+3. Entra a **Actions → Seed catálogo → Run workflow** y elige la rama
+   `main`. Espera a que termine (1-2 minutos) y revisa
    `https://inventra-seven-xi.vercel.app/api/items`: ahí deben aparecer
    los 14 servicios.
 
