@@ -10,6 +10,9 @@ import { getApiErrorMessage } from "../utils/apiError";
 
 const emptyItem = { name: "", description: "", price: "", categoryId: "" };
 
+// Mismo orden que la API (por nombre) para que la lista no se reordene al recargar.
+const sortCategories = list => [...list].sort((a, b) => a.name.localeCompare(b.name, "es"));
+
 export default function DashboardPage() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -32,8 +35,8 @@ export default function DashboardPage() {
     setLoading(true); setError("");
     try {
       const [itemsResult, categoriesResult, inquiriesResult] = await Promise.allSettled([api.get("/api/items"), api.get("/api/categories"), api.get("/api/inquiries")]);
-      if (itemsResult.status === "fulfilled") setItems(Array.isArray(itemsResult.value.data) ? itemsResult.value.data : []);
-      if (categoriesResult.status === "fulfilled") setCategories(Array.isArray(categoriesResult.value.data) ? categoriesResult.value.data : []);
+      if (itemsResult.status === "fulfilled") { const data = itemsResult.value.data; setItems(Array.isArray(data) ? data : data?.items ?? []); }
+      if (categoriesResult.status === "fulfilled") { const data = categoriesResult.value.data; setCategories(Array.isArray(data) ? data : data?.categories ?? []); }
       if (inquiriesResult.status === "fulfilled") setInquiries(Array.isArray(inquiriesResult.value.data) ? inquiriesResult.value.data : []);
       const failed = [itemsResult, categoriesResult, inquiriesResult].filter(result => result.status === "rejected").length;
       if (failed === 3) setError("No fue posible cargar el panel.");
@@ -59,7 +62,8 @@ export default function DashboardPage() {
         notify("Servicio actualizado");
       } else {
         const { data } = await api.post("/api/items", itemForm);
-        setItems([...items, data]); notify("Servicio creado");
+        // La API ordena por fecha desc: el nuevo va arriba, donde le toca.
+        setItems([data, ...items]); notify("Servicio creado");
       }
       setItemForm(emptyItem); setEditing(null); setEditorOpen(false);
     } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo guardar el servicio.")); }
@@ -71,12 +75,13 @@ export default function DashboardPage() {
     try {
       if (editing?.type === "category") {
         const { data } = await api.put(`/api/categories/${editing.id}`, { name: categoryForm });
-        setCategories(categories.map(category => category.id === editing.id ? data : category));
+        setCategories(sortCategories(categories.map(category => category.id === editing.id ? data : category)));
         setItems(items.map(item => item.categoryId === editing.id ? { ...item, category: data } : item));
         notify("Categoría actualizada");
       } else {
         const { data } = await api.post("/api/categories", { name: categoryForm });
-        setCategories([...categories, data]); notify("Categoría creada");
+        // La API ordena por nombre: la nueva entra en su sitio, no al final.
+        setCategories(sortCategories([...categories, data])); notify("Categoría creada");
       }
       setCategoryForm(""); setEditing(null); setEditorOpen(false);
     } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo guardar la categoría.")); }
@@ -86,7 +91,11 @@ export default function DashboardPage() {
   async function remove(type, value) {
     try {
       await api.delete(`/api/${type === "item" ? "items" : "categories"}/${value.id}`);
-      if (type === "item") setItems(items.filter(item => item.id !== value.id));
+      if (type === "item") {
+        setItems(items.filter(item => item.id !== value.id));
+        // La BD borra en cascada sus solicitudes: se quitan del panel sin recargar.
+        setInquiries(inquiries.filter(entry => entry.service?.id !== value.id && entry.serviceId !== value.id));
+      }
       else setCategories(categories.filter(category => category.id !== value.id));
       notify("Elemento eliminado");
     } catch (requestError) { setError(getApiErrorMessage(requestError, "No se pudo eliminar el elemento.")); }
@@ -112,7 +121,21 @@ export default function DashboardPage() {
   }
 
   function cancel() { setEditing(null); setEditorOpen(false); setItemForm(emptyItem); setCategoryForm(""); }
-  function changeTab(nextTab) { setTab(nextTab); cancel(); }
+  function isDirty() {
+    if (editing) return true;
+    return itemForm.name !== "" || itemForm.description !== "" || itemForm.price !== "" || itemForm.categoryId !== "" || categoryForm !== "";
+  }
+  function changeTab(nextTab) {
+    if (nextTab === tab) return;
+    if (!isDirty()) { setTab(nextTab); return; }
+    // Cambiar de pestaña descarta la edición: se avisa antes de perderla.
+    setConfirmation({
+      title: "Descartar cambios",
+      description: "Tienes cambios sin guardar. Si cambias de pestaña, se pierden.",
+      confirmLabel: "Descartar",
+      action: () => { setTab(nextTab); cancel(); },
+    });
+  }
   function editItem(item) {
     setError("");
     setTab("items");
@@ -170,7 +193,7 @@ export default function DashboardPage() {
       <div className="catalog-controls"><div className="tabs" role="group" aria-label="Tipo de contenido"><button aria-pressed={tab === "items"} className={tab === "items" ? "active" : ""} onClick={() => changeTab("items")}>Servicios</button><button aria-pressed={tab === "categories"} className={tab === "categories" ? "active" : ""} onClick={() => changeTab("categories")}>Categorías</button></div><button className="button button-primary" onClick={() => { setError(""); setEditorOpen(true); }}>{tab === "items" ? "Nuevo servicio" : "Nueva categoría"}</button></div>
       <div className="dashboard-grid">
         {editorOpen && <CatalogEditor tab={tab} editing={editing} itemForm={itemForm} categoryForm={categoryForm} categories={categories} saving={saving} error={error} onItemChange={setItemForm} onCategoryChange={setCategoryForm} onSaveItem={saveItem} onSaveCategory={saveCategory} onCancel={cancel}/>}
-        <CatalogContent tab={tab} items={items} categories={categories} query={query} loading={loading} error={error} currency={currency} onQueryChange={setQuery} onEditItem={editItem} onEditCategory={editCategory} onRemove={askToRemove}/>
+        <CatalogContent tab={tab} items={items} categories={categories} query={query} loading={loading} error={editorOpen ? "" : error} currency={currency} onQueryChange={setQuery} onEditItem={editItem} onEditCategory={editCategory} onRemove={askToRemove}/>
       </div>
       <InquiriesPanel inquiries={inquiries} onStatusChange={updateInquiry} onRemoveClosed={askToRemoveClosed}/>
       <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || "Confirmar acción"} description={confirmation?.description || ""} confirmLabel={confirmation?.confirmLabel || "Confirmar"} onConfirm={confirmAction} onCancel={() => setConfirmation(null)}/>

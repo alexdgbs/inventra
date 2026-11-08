@@ -5,6 +5,7 @@ import Modal from "../Modal";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { categoryLabel, getCategoryName } from "../../utils/categories";
 import { FORM_LIMITS } from "../../utils/formLimits";
+import { formatPrice } from "../../utils/pricing";
 
 function InquiryForm({ serviceId, onSent }) {
   const [inquiry, setInquiry] = useState({ name: "", email: "", message: "" });
@@ -19,11 +20,11 @@ function InquiryForm({ serviceId, onSent }) {
   return <form className="inquiry-form" onSubmit={submit}><h3>Solicitar este servicio</h3><div className="inquiry-row"><label>Nombre<input value={inquiry.name} onChange={event => setInquiry({ ...inquiry, name: event.target.value })} minLength={FORM_LIMITS.inquiry.name.min} maxLength={FORM_LIMITS.inquiry.name.max} required/></label><label>Correo electrónico<input type="email" value={inquiry.email} onChange={event => setInquiry({ ...inquiry, email: event.target.value })} maxLength={FORM_LIMITS.inquiry.email.max} required/></label></div><label>Mensaje<textarea value={inquiry.message} onChange={event => setInquiry({ ...inquiry, message: event.target.value })} minLength={FORM_LIMITS.inquiry.message.min} maxLength={FORM_LIMITS.inquiry.message.max} placeholder="Cuéntanos brevemente qué necesitas" required/></label>{error && <div className="form-error" role="alert">{error}</div>}<button className="button button-primary button-full" disabled={sending}>{sending ? "Enviando…" : "Enviar solicitud"}</button></form>;
 }
 
-export default function ServiceDetailsModal({ service, isAdmin, onClose }) {
+export default function ServiceDetailsModal({ service, currency, isAdmin, onClose }) {
   const [sent, setSent] = useState(false);
   const category = getCategoryName(service.category);
-  return <Modal open className="service-modal" role="dialog" labelledBy="service-title" onClose={onClose}><button className="modal-close" onClick={onClose} aria-label="Cerrar detalles">×</button><span className="service-category">{categoryLabel(category)}</span><h2 id="service-title">{service.name}</h2><p>{service.description}</p><dl><div><dt>Tarifa</dt><dd>{service.formattedPrice}</dd></div><div><dt>Modalidad</dt><dd>Por hora</dd></div><div><dt>Moneda</dt><dd>{service.currency}</dd></div></dl>{isAdmin ? <div className="admin-inquiry-notice" role="note"><strong>Vista administrativa</strong><p>Las solicitudes de servicio se reservan para clientes externos.</p></div> : sent ? <div className="inquiry-success" role="status"><strong>Solicitud recibida</strong><p>Tu mensaje quedó registrado correctamente.</p><button className="button button-primary button-full" onClick={onClose}>Cerrar</button></div> : <InquiryForm serviceId={service.id} onSent={() => setSent(true)}/>}</Modal>;
+  return <Modal open className="service-modal" role="dialog" labelledBy="service-title" onClose={onClose}><button className="modal-close" onClick={onClose} aria-label="Cerrar detalles">×</button><span className="service-category">{categoryLabel(category)}</span><h2 id="service-title">{service.name}</h2><p>{service.description}</p><dl><div><dt>Tarifa</dt><dd>{formatPrice(service.price, currency)}</dd></div><div><dt>Modalidad</dt><dd>Por hora</dd></div><div><dt>Moneda</dt><dd>{currency}</dd></div></dl>{isAdmin ? <div className="admin-inquiry-notice" role="note"><strong>Vista administrativa</strong><p>Las solicitudes de servicio se reservan para clientes externos.</p></div> : sent ? <div className="inquiry-success" role="status"><strong>Solicitud recibida</strong><p>Tu mensaje quedó registrado correctamente.</p><button className="button button-primary button-full" onClick={onClose}>Cerrar</button></div> : <InquiryForm serviceId={service.id} onSent={() => setSent(true)}/>}</Modal>;
 }
 
 InquiryForm.propTypes = { serviceId: PropTypes.number.isRequired, onSent: PropTypes.func.isRequired };
-ServiceDetailsModal.propTypes = { service: PropTypes.object.isRequired, isAdmin: PropTypes.bool.isRequired, onClose: PropTypes.func.isRequired };
+ServiceDetailsModal.propTypes = { service: PropTypes.object.isRequired, currency: PropTypes.oneOf(["MXN", "USD"]).isRequired, isAdmin: PropTypes.bool.isRequired, onClose: PropTypes.func.isRequired };

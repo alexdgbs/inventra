@@ -1,7 +1,16 @@
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import SearchIcon from "../icons/SearchIcon";
 
 export default function CatalogState({ type, message, onAction, layout = "grid" }) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (type !== "loading") return undefined;
+    // La API duerme en el plan gratuito: si tarda, se dice, no se deja
+    // al visitante mirando el esqueleto sin saber qué pasa.
+    const timer = window.setTimeout(() => setSlow(true), 6000);
+    return () => window.clearTimeout(timer);
+  }, [type]);
   if (type === "loading") return (
     <div role="status" aria-label="Cargando servicios">
       <div className={layout === "list" ? "skeleton-list" : "services-grid"} aria-hidden="true">
@@ -13,6 +22,7 @@ export default function CatalogState({ type, message, onAction, layout = "grid" 
           <div className="skeleton-footer"><span className="skeleton-line skeleton-price"/><span className="skeleton-line skeleton-button"/></div>
         </div>)}
       </div>
+      {slow && <p className="loading-note">La API está despertando, puede tardar unos segundos más.</p>}
     </div>
   );
   if (type === "error") return <div className="state-card"><span aria-hidden="true">!</span><h3>No pudimos conectar</h3><p>{message}</p><button className="button button-primary" onClick={onAction}>Intentar de nuevo</button></div>;

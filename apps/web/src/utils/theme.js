@@ -16,7 +16,7 @@ export function resolveTheme(saved) {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function themeBackground(theme) {
+function themeBackground(theme) {
   return theme === "dark" ? THEME_DARK_BACKGROUND : THEME_LIGHT_BACKGROUND;
 }
 

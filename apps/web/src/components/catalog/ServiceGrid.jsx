@@ -14,14 +14,13 @@ function ServiceCard({ item, onView, currency }) {
       <p>{item.description}</p>
       <div className="card-bottom">
         <div className="card-price">
-          <small>Desde</small>
           <strong>{formattedPrice}</strong>
           <span>{currency} por hora</span>
         </div>
         <button
           type="button"
           className="card-action"
-          onClick={() => onView({ ...item, formattedPrice, currency })}
+          onClick={() => onView(item)}
           aria-label={`Ver detalles de ${item.name}`}
         >
           Ver servicio

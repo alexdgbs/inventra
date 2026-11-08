@@ -23,7 +23,7 @@ export default function HomePage() {
 
   async function loadItems() {
     setLoading(true); setError("");
-    try { const { data } = await api.get("/api/items"); setItems(Array.isArray(data) ? data : []); }
+    try { const { data } = await api.get("/api/items"); setItems(Array.isArray(data) ? data : data?.items ?? []); }
     catch (requestError) { setError(getApiErrorMessage(requestError, "No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo.")); }
     finally { setLoading(false); }
   }
@@ -53,6 +53,6 @@ export default function HomePage() {
       {currency === "USD" && <p className="currency-note">Conversión estimada con una tasa configurable de {USD_MXN_RATE} MXN por USD.</p>}
       {loading ? <CatalogState type="loading"/> : error ? <CatalogState type="error" message={error} onAction={loadItems}/> : filtered.length ? <ServiceGrid items={filtered} currency={currency} onView={setSelected}/> : <CatalogState type="empty" onAction={clearFilters}/>}
     </div></section>
-    {selected && <ServiceDetailsModal service={selected} isAdmin={user?.role === "admin"} onClose={() => setSelected(null)}/>}
+    {selected && <ServiceDetailsModal service={selected} currency={currency} isAdmin={user?.role === "admin"} onClose={() => setSelected(null)}/>}
   </>;
 }

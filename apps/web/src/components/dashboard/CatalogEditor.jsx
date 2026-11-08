@@ -6,7 +6,12 @@ import { FORM_LIMITS } from "../../utils/formLimits";
 export default function CatalogEditor({ tab, editing, itemForm, categoryForm, categories, saving, error, onItemChange, onCategoryChange, onSaveItem, onSaveCategory, onCancel }) {
   const dialogRef = useRef(null);
   useModalScrollLock(true);
-  useEffect(() => { dialogRef.current?.showModal(); }, []);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || dialog.open) return undefined;
+    dialog.showModal();
+    return () => { if (dialog.open) dialog.close(); };
+  }, []);
   return <dialog ref={dialogRef} className="editor-panel" aria-label={editing ? "Editar" : "Crear"} onCancel={event => { event.preventDefault(); if (!saving) onCancel(); }}>
     <button type="button" className="editor-close" onClick={onCancel} disabled={saving}>Cerrar</button>
     {error && <div className="form-error" role="alert">{error}</div>}
