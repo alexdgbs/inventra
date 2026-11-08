@@ -24,6 +24,9 @@ const apiLimiter = rateLimit({
   limit: 120,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  // El health no cuenta para el límite: es el toque que despierta la API
+  // en el plan gratuito y lo que usan los monitores para vigilarla.
+  skip: req => req.path === "/health",
   message: { message: "Demasiadas solicitudes. Intenta de nuevo en un momento." },
 });
 

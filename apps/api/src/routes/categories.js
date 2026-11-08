@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { parsePagination, pageOf } from "../lib/pagination.js";
 import { idSchema } from "../lib/idSchema.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 
@@ -8,11 +9,17 @@ const router = Router();
 const categorySchema = z.object({ name: z.string().trim().min(2).max(80) });
 
 router.get("/", async (req, res) => {
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, _count: { select: { services: true } } },
-  });
-  res.json(categories);
+  const { page, limit } = parsePagination(req.query);
+  const [categories, total] = await Promise.all([
+    prisma.category.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, _count: { select: { services: true } } },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.category.count(),
+  ]);
+  res.json(pageOf("categories", categories, total, { page, limit }));
 });
 
 router.post("/", requireAuth, requireAdmin, async (req, res) => {

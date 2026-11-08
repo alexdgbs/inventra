@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { parsePagination, pageOf } from "../lib/pagination.js";
 import { idSchema } from "../lib/idSchema.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 
@@ -15,8 +16,12 @@ const selection = { id: true, name: true, description: true, price: true, catego
 const serialize = item => ({ ...item, price: Number(item.price) });
 
 router.get("/", async (req, res) => {
-  const items = await prisma.service.findMany({ orderBy: { createdAt: "desc" }, select: selection });
-  res.json(items.map(serialize));
+  const { page, limit } = parsePagination(req.query);
+  const [items, total] = await Promise.all([
+    prisma.service.findMany({ orderBy: { createdAt: "desc" }, select: selection, skip: (page - 1) * limit, take: limit }),
+    prisma.service.count(),
+  ]);
+  res.json(pageOf("items", items.map(serialize), total, { page, limit }));
 });
 
 router.post("/", requireAuth, requireAdmin, async (req, res) => {
