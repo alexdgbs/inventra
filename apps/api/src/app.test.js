@@ -40,6 +40,15 @@ describe("API", () => {
   it("rechaza solicitudes de contacto inválidas", async () => { const response = await request(app).post("/api/inquiries").send({ serviceId: 1, name: "A", email: "correo-invalido", message: "corto" }); expect(response.status).toBe(400); expect(response.body.errors).toBeDefined(); });
   it("registra una solicitud válida", async () => { prismaMock.service.findUnique.mockResolvedValue({ id: 1 }); prismaMock.inquiry.create.mockResolvedValue({ id: 8, status: "NEW", createdAt: new Date() }); const response = await request(app).post("/api/inquiries").send({ serviceId: 1, name: "Ana López", email: "ana@example.com", message: "Necesito información sobre el servicio." }); expect(response.status).toBe(201); expect(response.body.status).toBe("NEW"); expect(prismaMock.inquiry.create).toHaveBeenCalledOnce(); });
   it("entrega la sesión en una cookie httpOnly", async () => { prismaMock.user.findUnique.mockResolvedValue({ id: 1, username: "admin", passwordHash: "hash", role: "ADMIN" }); const response = await request(app).post("/api/auth/login").send({ username: "admin", password: "inventra123" }); expect(response.status).toBe(200); expect(response.body.token).toBeUndefined(); expect(response.headers["set-cookie"][0]).toContain("HttpOnly"); });
+  it("devuelve usuario nulo sin token en /me", async () => { const response = await request(app).get("/api/auth/me"); expect(response.status).toBe(200); expect(response.body.user).toBeNull(); });
+  it("rechaza /me con un token inválido", async () => { const response = await request(app).get("/api/auth/me").set("Cookie", "inventra_session=token-invalido"); expect(response.status).toBe(401); });
+  it("devuelve la sesión en /me con un token válido", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 1, username: "admin", passwordHash: "hash", role: "ADMIN" });
+    const login = await request(app).post("/api/auth/login").send({ username: "admin", password: "inventra123" });
+    const response = await request(app).get("/api/auth/me").set("Cookie", login.headers["set-cookie"]);
+    expect(response.status).toBe(200);
+    expect(response.body.user).toEqual({ id: 1, username: "admin", role: "admin" });
+  });
   it("rechaza solicitudes creadas desde una sesión administrativa", async () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 1, username: "admin", passwordHash: "hash", role: "ADMIN" });
     const login = await request(app).post("/api/auth/login").send({ username: "admin", password: "inventra123" });

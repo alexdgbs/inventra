@@ -34,6 +34,19 @@ export function readOptionalAuth(req, res, next) {
   }
 }
 
+// Para /me: sin token sigue como anónimo (200 con usuario nulo); con token
+// inválido sí es 401, porque ahí hubo un intento de sesión.
+export function optionalAuth(req, res, next) {
+  const token = readToken(req);
+  if (!token) return next();
+  try {
+    req.user = verifyToken(token);
+    return next();
+  } catch {
+    return res.status(401).json({ message: "La sesión no es válida o expiró." });
+  }
+}
+
 export function requireAdmin(req, res, next) {
   if (req.user?.role !== "admin") return res.status(403).json({ message: "No tienes permisos para esta acción." });
   return next();

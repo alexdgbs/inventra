@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { requireAuth } from "../middleware/auth.js";
+import { optionalAuth } from "../middleware/auth.js";
 import { sessionCookieMaxAge, sessionCookieName, sessionCookieOptions } from "../lib/session.js";
 
 const router = Router();
@@ -26,8 +26,9 @@ router.post("/login", async (req, res) => {
   return res.json({ user: { id: user.id, username: user.username, role } });
 });
 
-router.get("/me", requireAuth, (req, res) => {
+router.get("/me", optionalAuth, (req, res) => {
   res.set("Cache-Control", "no-store");
+  if (!req.user) return res.json({ user: null });
   return res.json({ user: { id: Number(req.user.sub), username: req.user.username, role: req.user.role } });
 });
 
